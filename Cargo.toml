@@ -1,0 +1,15 @@
+[package]
+name = "leveldb-sys"
+version = "0.0.1"
+authors = ["Andrew Dunham <andrew@du.nham.ca>"]
+
+description = "FFI bindings to LevelDB"
+repository = "https://github.com/andrew-d/leveldb-rs"
+license = "MIT"
+
+build = "src/build.rs"
+links = "leveldb"
+
+[dependencies.snappy-sys]
+path = "../snappy-sys"
+version = "0.0.1"
