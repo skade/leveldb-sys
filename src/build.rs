@@ -41,6 +41,6 @@ fn main() {
     // Step 3: Tell Rust about what we link to
     // ----------------------------------------------------------------------
     let out_dir = os::getenv("OUT_DIR").unwrap();
-    println!("cargo:rustc-flags=-L {} -l leveldb:static", out_dir);
+    println!("cargo:rustc-flags=-L native={} -l static=leveldb -l stdc++", out_dir);
     println!("[build] Finished");
 }
