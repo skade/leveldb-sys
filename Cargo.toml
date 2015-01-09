@@ -10,6 +10,5 @@ license = "MIT"
 build = "src/build.rs"
 links = "leveldb"
 
-[dependencies.snappy-sys]
-path = "../snappy-sys"
-version = "0.0.1"
+[features]
+snappy = []

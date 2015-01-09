@@ -2,7 +2,6 @@
 #![allow(dead_code)]
 
 extern crate libc;
-extern crate "snappy-sys" as snappy_sys;
 
 use libc::{c_char, c_int, c_uchar, c_void};
 use libc::types::os::arch::c95::size_t;
@@ -26,6 +25,8 @@ pub type leveldb_writebatch_t = c_void;
 pub type leveldb_writeoptions_t = c_void;
 
 pub static LEVELDB_NO_COMPRESSION: c_int = 0;
+
+#[cfg(feature = "snappy")]
 pub static LEVELDB_SNAPPY_COMPRESSION: c_int = 1;
 
 extern "C" {
@@ -89,6 +90,7 @@ extern "C" {
     pub fn leveldb_options_set_cache(o: *mut leveldb_options_t, cache: *mut leveldb_cache_t);
     pub fn leveldb_options_set_block_size(o: *mut leveldb_options_t, size: size_t);
     pub fn leveldb_options_set_block_restart_interval(o: *mut leveldb_options_t, interval: c_int);
+    #[cfg(feature = "snappy")]
     pub fn leveldb_options_set_compression(o: *mut leveldb_options_t, val: c_int);
 
     // Comparator
