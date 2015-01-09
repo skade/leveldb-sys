@@ -4,18 +4,11 @@ use std::io::{BufferedReader, Command, File, fs};
 use std::os;
 use std::path::Path;
 
+use std::path::BytesContainer;
+
 const SNAPPY_VERSION: &'static str  = "1.1.2";
 const LEVELDB_VERSION: &'static str = "1.18";
 
-#[cfg(target_os = "linux")]
-fn true_binary() -> &'static str {
-    "/bin/true"
-}
-
-#[cfg(target_os = "macos")]
-fn true_binary() -> &'static str {
-    "/usr/bin/true"
-}
 
 fn build_snappy() {
     // Step 1: Build snappy
@@ -83,6 +76,11 @@ fn build_leveldb(with_snappy: bool) {
             CString::from_slice("CXXFLAGS".as_bytes()),
             CString::from_slice(format!("-I{} -fPIC", snappy_path.as_str().unwrap()).as_bytes())
         );
+    } else {
+        env_map.insert(
+            CString::from_slice("CXXFLAGS".as_bytes()),
+            CString::from_slice(format!("-fPIC").as_bytes())
+        );
     }
 
     // Convert to the format that `env_set_all` is expecting.
@@ -90,10 +88,17 @@ fn build_leveldb(with_snappy: bool) {
 
     // Build the library
     println!("[leveldb] Building");
-    Command::new("make")
+    let mut pp = Command::new("make")
             .args(&["-C", leveldb_path.as_str().unwrap()])
             .env_set_all(env_arr.as_slice())
-            .status().unwrap();
+            .spawn().unwrap();
+    let stdout_buff = pp.stdout.as_mut().unwrap().read_to_end().unwrap();
+    let stdout = String::from_utf8_lossy(stdout_buff.as_slice());
+    println!("[leveldb] Process stdout = \"{}\"", stdout.escape_default());
+
+    let stderr_buff = pp.stderr.as_mut().unwrap().read_to_end().unwrap();
+    let stderr = String::from_utf8_lossy(stderr_buff.as_slice());
+    println!("[leveldb] Process stderr = \"{}\"", stderr.escape_default());
 
     // Step 2: Copy to output directories
     // ----------------------------------------------------------------------
@@ -135,8 +140,7 @@ fn main() {
                 let mut line = line.unwrap();
                 if line.contains("-DSNAPPY") || line.contains("-lsnappy") {
                     let mut tmp = String::new();
-                    tmp.push_str(true_binary());
-                    tmp.push_str("  # ");
+                    tmp.push_str("true   #");
                     tmp.push_str(line.as_slice());
                     tmp
                 } else {
@@ -152,6 +156,9 @@ fn main() {
 
         println!("[build] Patching complete");
     }
+
+    // Set executable bits on the file
+    fs::chmod(&detect_path, std::io::USER_EXEC).unwrap();
 
     // Build LevelDB
     build_leveldb(have_snappy);
