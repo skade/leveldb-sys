@@ -4,8 +4,6 @@ use std::io::{BufferedReader, Command, File, fs};
 use std::os;
 use std::path::Path;
 
-use std::path::BytesContainer;
-
 const SNAPPY_VERSION: &'static str  = "1.1.2";
 const LEVELDB_VERSION: &'static str = "1.18";
 
@@ -137,7 +135,7 @@ fn main() {
             let mut file = BufferedReader::new(File::open(&template_path));
 
             file.lines().map(|line| {
-                let mut line = line.unwrap();
+                let line = line.unwrap();
                 if line.contains("-DSNAPPY") || line.contains("-lsnappy") {
                     let mut tmp = String::new();
                     tmp.push_str("true   #");
@@ -151,7 +149,7 @@ fn main() {
 
         let mut f = File::create(&detect_path);
         for line in new_lines.iter() {
-            f.write_str(line.as_slice());
+            f.write_str(line.as_slice()).unwrap();
         }
 
         println!("[build] Patching complete");
