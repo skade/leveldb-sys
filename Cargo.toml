@@ -12,3 +12,6 @@ links = "leveldb"
 
 [features]
 snappy = []
+
+[dependencies]
+libc = "*"
