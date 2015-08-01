@@ -7,27 +7,61 @@ use libc::{c_char, c_int, c_uchar, c_void};
 use libc::types::os::arch::c95::size_t;
 
 // These are opaque types that LevelDB uses.
-pub type leveldb_t = c_void;
-pub type leveldb_cache_t = c_void;
-pub type leveldb_comparator_t = c_void;
-pub type leveldb_env_t = c_void;
-pub type leveldb_filelock_t = c_void;
-pub type leveldb_filterpolicy_t = c_void;
-pub type leveldb_iterator_t = c_void;
-pub type leveldb_logger_t = c_void;
-pub type leveldb_options_t = c_void;
-pub type leveldb_randomfile_t = c_void;
-pub type leveldb_readoptions_t = c_void;
-pub type leveldb_seqfile_t = c_void;
-pub type leveldb_snapshot_t = c_void;
-pub type leveldb_writablefile_t = c_void;
-pub type leveldb_writebatch_t = c_void;
-pub type leveldb_writeoptions_t = c_void;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_cache_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_comparator_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_env_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_filelock_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_filterpolicy_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_iterator_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_logger_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_options_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_randomfile_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_readoptions_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_seqfile_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_snapshot_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_writablefile_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_writebatch_t;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub struct leveldb_writeoptions_t;
 
-pub static LEVELDB_NO_COMPRESSION: c_int = 0;
-
-#[cfg(feature = "snappy")]
-pub static LEVELDB_SNAPPY_COMPRESSION: c_int = 1;
+#[repr(C)]
+#[derive(Copy,Clone)]
+pub enum Compression {
+  No = 0,
+  Snappy = 1
+}
 
 extern "C" {
     // DB operations
@@ -58,8 +92,8 @@ extern "C" {
     pub fn leveldb_iter_seek(it: *mut leveldb_iterator_t, k: *const c_char, klen: size_t);
     pub fn leveldb_iter_next(it: *mut leveldb_iterator_t);
     pub fn leveldb_iter_prev(it: *mut leveldb_iterator_t);
-    pub fn leveldb_iter_key(it: *const leveldb_iterator_t, klen: *mut size_t) -> *const c_char;
-    pub fn leveldb_iter_value(it: *const leveldb_iterator_t, vlen: *mut size_t) -> *const c_char;
+    pub fn leveldb_iter_key(it: *const leveldb_iterator_t, klen: *const size_t) -> *const c_char;
+    pub fn leveldb_iter_value(it: *const leveldb_iterator_t, vlen: *const size_t) -> *const c_char;
     pub fn leveldb_iter_get_error(it: *const leveldb_iterator_t, errptr: *const *const c_char);
 
     // Write batch
@@ -90,8 +124,7 @@ extern "C" {
     pub fn leveldb_options_set_cache(o: *mut leveldb_options_t, cache: *mut leveldb_cache_t);
     pub fn leveldb_options_set_block_size(o: *mut leveldb_options_t, size: size_t);
     pub fn leveldb_options_set_block_restart_interval(o: *mut leveldb_options_t, interval: c_int);
-    #[cfg(feature = "snappy")]
-    pub fn leveldb_options_set_compression(o: *mut leveldb_options_t, val: c_int);
+    pub fn leveldb_options_set_compression(o: *mut leveldb_options_t, val: Compression);
 
     // Comparator
     pub fn leveldb_comparator_create(
