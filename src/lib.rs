@@ -4,7 +4,7 @@
 extern crate libc;
 
 use libc::{c_char, c_int, c_uchar, c_void};
-use libc::types::os::arch::c95::size_t;
+use libc::size_t;
 
 // These are opaque types that LevelDB uses.
 #[repr(C)]
