@@ -180,11 +180,18 @@ fn main() {
     // Print the appropriate linker flags
     let out_dir = env::var("OUT_DIR").ok().expect("OUT_DIR missing");
     let linker_flags = if have_snappy {
-        "-l static=snappy -l static=leveldb -l stdc++"
+        "-l static=snappy -l static=leveldb"
     } else {
-        "-l static=leveldb -l stdc++"
+        "-l static=leveldb"
     };
-    println!("cargo:rustc-flags=-L native={} {} -l stdc++", out_dir, linker_flags);
+    println!("cargo:rustc-flags=-L native={} {}", out_dir, linker_flags);
+
+    let target = env::var("TARGET").unwrap();
+    if target.contains("apple") {
+        println!("cargo:rustc-link-lib=c++");
+    } else {
+        println!("cargo:rustc-link-lib=stdc++");
+    }
 
     println!("[build] Finished");
 }
