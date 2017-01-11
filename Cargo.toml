@@ -5,7 +5,7 @@ authors = ["Andrew Dunham <andrew@du.nham.ca>", "Florian Gilcher <florian.gilche
 
 description = "FFI bindings to LevelDB"
 repository = "https://github.com/skade/leveldb-sys"
-documentation = "https://docs.rs/leveldb-sys/2.0.0/leveldb_sys/"
+documentation = "https://docs.rs/leveldb-sys/"
 license = "MIT"
 
 build = "src/build.rs"
