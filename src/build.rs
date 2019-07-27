@@ -189,7 +189,7 @@ fn main() {
     let target = env::var("TARGET").unwrap();
     if target.contains("apple") {
         println!("cargo:rustc-link-lib=c++");
-    } else {
+    } else if target.contains("gnu") {
         println!("cargo:rustc-link-lib=stdc++");
     }
 
