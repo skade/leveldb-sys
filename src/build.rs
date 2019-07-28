@@ -28,7 +28,7 @@ fn build_snappy() {
     // Configure the build
     println!("[snappy] Configuring");
     Command::new("./configure").current_dir(&snappy_path)
-                               .arg("CXXFLAGS=-fPIC")
+                               .arg("--disable-shared")
                                .status().ok().expect("configure failed");
 
     // Call "make" to build the C library
@@ -189,7 +189,7 @@ fn main() {
     let target = env::var("TARGET").unwrap();
     if target.contains("apple") {
         println!("cargo:rustc-link-lib=c++");
-    } else {
+    } else if target.contains("gnu") {
         println!("cargo:rustc-link-lib=stdc++");
     }
 
