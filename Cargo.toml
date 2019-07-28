@@ -1,6 +1,6 @@
 [package]
 name = "leveldb-sys"
-version = "2.0.1"
+version = "2.0.2"
 authors = ["Andrew Dunham <andrew@du.nham.ca>", "Florian Gilcher <florian.gilcher@asquera.de>"]
 
 description = "FFI bindings to LevelDB"
