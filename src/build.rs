@@ -13,12 +13,12 @@ const SNAPPY_VERSION: &'static str  = "1.1.2";
 const LEVELDB_VERSION: &'static str = "1.18";
 
 
-fn build_snappy(is_freebsd: bool) {
+fn build_snappy(is_bsd: bool) {
     // Step 1: Build snappy
     // ----------------------------------------------------------------------
     let snappy_path = Path::new("deps")
                            .join(format!("snappy-{}", SNAPPY_VERSION));
-    let make = if is_freebsd { "gmake" } else { "make" };
+    let make = if is_bsd { "gmake" } else { "make" };
 
     // Clean the build directory first.
     println!("[snappy] Cleaning");
@@ -47,12 +47,12 @@ fn build_snappy(is_freebsd: bool) {
     res.ok().expect("copy of output files failed");
 }
 
-fn build_leveldb(with_snappy: bool, is_freebsd: bool) {
+fn build_leveldb(with_snappy: bool, is_bsd: bool) {
     // Step 1: Build LevelDB
     // ----------------------------------------------------------------------
     let leveldb_path = Path::new("deps")
                             .join(format!("leveldb-{}", LEVELDB_VERSION));
-    let make = if is_freebsd { "gmake" } else { "make" };
+    let make = if is_bsd { "gmake" } else { "make" };
 
     // Clean the build directory first.
     println!("[leveldb] Cleaning");
@@ -121,11 +121,11 @@ fn main() {
     println!("[build] Started");
 
     let have_snappy = env::var("CARGO_FEATURE_SNAPPY").is_ok();
-    let is_freebsd = env::var("TARGET").unwrap().ends_with("freebsd");
+    let is_bsd = env::var("TARGET").unwrap().ends_with("bsd");
 
     // If we have the appropriate feature, then we build snappy.
     if have_snappy {
-        build_snappy(is_freebsd);
+        build_snappy(is_bsd);
     }
 
     // Copy the build_detect_platform file into the appropriate place.
@@ -178,7 +178,7 @@ fn main() {
     fs::set_permissions(&detect_path, perms).ok().expect("permissions could not be set");
 
     // Build LevelDB
-    build_leveldb(have_snappy, is_freebsd);
+    build_leveldb(have_snappy, is_bsd);
 
     // Print the appropriate linker flags
     let out_dir = env::var("OUT_DIR").ok().expect("OUT_DIR missing");
