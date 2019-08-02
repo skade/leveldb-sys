@@ -20,6 +20,6 @@ leveldb-sys = "*"
 
 MIT
 
-## FreeBSD support
+## BSD support
 
 To build leveldb-sys you need to install `gmake` (GNU Make)
