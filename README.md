@@ -19,3 +19,7 @@ leveldb-sys = "*"
 ## LICENSE
 
 MIT
+
+## FreeBSD support
+
+To build leveldb-sys you need to install `gmake` (GNU Make)
