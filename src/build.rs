@@ -194,6 +194,8 @@ fn main() {
         println!("cargo:rustc-link-lib=c++");
     } else if target.contains("gnu") {
         println!("cargo:rustc-link-lib=stdc++");
+    } else if target.contains("bsd") {
+        println!("cargo:rustc-link-lib=c++");
     }
 
     println!("[build] Finished");
