@@ -121,7 +121,8 @@ fn main() {
     println!("[build] Started");
 
     let have_snappy = env::var("CARGO_FEATURE_SNAPPY").is_ok();
-    let is_bsd = env::var("TARGET").unwrap().ends_with("bsd");
+    let target = env::var("TARGET").unwrap();
+    let is_bsd = target.ends_with("bsd");
 
     // If we have the appropriate feature, then we build snappy.
     if have_snappy {
@@ -189,13 +190,10 @@ fn main() {
     };
     println!("cargo:rustc-flags=-L native={} {}", out_dir, linker_flags);
 
-    let target = env::var("TARGET").unwrap();
-    if target.contains("apple") {
+    if target.contains("apple") || target.contains("freebsd") {
         println!("cargo:rustc-link-lib=c++");
-    } else if target.contains("gnu") {
+    } else if target.contains("gnu") || target.contains("netbsd") || target.contains("openbsd") {
         println!("cargo:rustc-link-lib=stdc++");
-    } else if target.contains("bsd") {
-        println!("cargo:rustc-link-lib=c++");
     }
 
     println!("[build] Finished");
