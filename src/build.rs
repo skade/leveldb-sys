@@ -28,7 +28,8 @@ fn build_snappy(is_bsd: bool) {
 
     // Configure the build
     println!("[snappy] Configuring");
-    Command::new("./configure").current_dir(&snappy_path)
+    Command::new("/bin/sh").current_dir(&snappy_path)
+                               .arg("./configure")
                                .arg("--disable-shared")
                                .status().ok().expect("configure failed");
 
