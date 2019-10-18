@@ -1,41 +1,49 @@
 use std::collections::HashMap;
-use std::ffi::OsString;
-use std::fs::File;
-use std::fs;
 use std::env;
-use std::os::unix::fs::PermissionsExt;
-use std::io::{Write,BufReader};
+use std::ffi::OsString;
+use std::fs;
+use std::fs::File;
 use std::io::BufRead;
-use std::process::Command;
+use std::io::{BufReader, Write};
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
+use std::process::Command;
 
-const SNAPPY_VERSION: &'static str  = "1.1.2";
+const SNAPPY_VERSION: &'static str = "1.1.2";
 const LEVELDB_VERSION: &'static str = "1.18";
-
 
 fn build_snappy(is_bsd: bool) {
     // Step 1: Build snappy
     // ----------------------------------------------------------------------
-    let snappy_path = Path::new("deps")
-                           .join(format!("snappy-{}", SNAPPY_VERSION));
+    let snappy_path = Path::new("deps").join(format!("snappy-{}", SNAPPY_VERSION));
     let make = if is_bsd { "gmake" } else { "make" };
 
     // Clean the build directory first.
     println!("[snappy] Cleaning");
-    Command::new(make).args(&["-C", snappy_path.to_str().unwrap()])
-                        .arg("distclean")
-                        .status().ok().expect("make distclean failed");
+    Command::new(make)
+        .args(&["-C", snappy_path.to_str().unwrap()])
+        .arg("distclean")
+        .status()
+        .ok()
+        .expect("make distclean failed");
 
     // Configure the build
     println!("[snappy] Configuring");
-    Command::new("./configure").current_dir(&snappy_path)
-                               .arg("--disable-shared")
-                               .status().ok().expect("configure failed");
+    Command::new("/bin/sh")
+        .current_dir(&snappy_path)
+        .arg("./configure")
+        .arg("--disable-shared")
+        .status()
+        .ok()
+        .expect("configure failed");
 
     // Call "make" to build the C library
     println!("[snappy] Building");
-    Command::new(make).args(&["-C", snappy_path.to_str().unwrap()])
-                        .status().ok().expect("make failed");
+    Command::new(make)
+        .args(&["-C", snappy_path.to_str().unwrap()])
+        .status()
+        .ok()
+        .expect("make failed");
 
     // Step 2: Copy to output directories
     // ----------------------------------------------------------------------
@@ -43,51 +51,45 @@ fn build_snappy(is_bsd: bool) {
     let out_dir = Path::new(env_var);
 
     println!("[build] Copying output files");
-    let res = fs::copy(&snappy_path.join(".libs").join("libsnappy.a"), &out_dir.join("libsnappy.a"));
+    let res = fs::copy(
+        &snappy_path.join(".libs").join("libsnappy.a"),
+        &out_dir.join("libsnappy.a"),
+    );
     res.ok().expect("copy of output files failed");
 }
 
 fn build_leveldb(with_snappy: bool, is_bsd: bool) {
     // Step 1: Build LevelDB
     // ----------------------------------------------------------------------
-    let leveldb_path = Path::new("deps")
-                            .join(format!("leveldb-{}", LEVELDB_VERSION));
+    let leveldb_path = Path::new("deps").join(format!("leveldb-{}", LEVELDB_VERSION));
     let make = if is_bsd { "gmake" } else { "make" };
 
     // Clean the build directory first.
     println!("[leveldb] Cleaning");
-    Command::new(make).args(&["-C", leveldb_path.to_str().unwrap()])
-                        .arg("clean")
-                        .status().ok().expect("clean failed");
+    Command::new(make)
+        .args(&["-C", leveldb_path.to_str().unwrap()])
+        .arg("clean")
+        .status()
+        .ok()
+        .expect("clean failed");
 
     // Set up the process environment.  We essentially clone the existing
     // environment, and, if we're including Snappy, also include the appropriate
     // CXXFLAGS and LDFLAGS variables.
-    let mut env_map: HashMap<OsString, OsString> = env::vars().map(|(k, v)| {
-        (
-            k.into(),
-            v.into()
-        )
-    }).collect();
+    let mut env_map: HashMap<OsString, OsString> =
+        env::vars().map(|(k, v)| (k.into(), v.into())).collect();
 
     if with_snappy {
         let linker_path = env::var("OUT_DIR").unwrap();
-        env_map.insert(
-            "LDFLAGS".into(),
-            format!("-L{}", linker_path).into()
-        );
+        env_map.insert("LDFLAGS".into(), format!("-L{}", linker_path).into());
 
-        let snappy_path = Path::new("deps")
-                               .join(format!("snappy-{}", SNAPPY_VERSION));
+        let snappy_path = Path::new("deps").join(format!("snappy-{}", SNAPPY_VERSION));
         env_map.insert(
             "CXXFLAGS".into(),
-            format!("-I{} -fPIC", snappy_path.to_str().unwrap()).into()
+            format!("-I{} -fPIC", snappy_path.to_str().unwrap()).into(),
         );
     } else {
-        env_map.insert(
-            "CXXFLAGS".into(),
-            format!("-fPIC").into()
-        );
+        env_map.insert("CXXFLAGS".into(), format!("-fPIC").into());
     }
 
     let mut cmd = Command::new(make);
@@ -95,8 +97,8 @@ fn build_leveldb(with_snappy: bool, is_bsd: bool) {
     println!("[leveldb] Building command");
 
     // Convert to the format that `env_set_all` is expecting.
-    for (k,v) in env_map.into_iter() {
-        cmd.env(k,v);
+    for (k, v) in env_map.into_iter() {
+        cmd.env(k, v);
     }
 
     let path_arg = leveldb_path.to_str().expect("leveldb path is not a string");
@@ -104,7 +106,9 @@ fn build_leveldb(with_snappy: bool, is_bsd: bool) {
     // Build the library
     println!("[leveldb] Building");
     cmd.args(&["-C", path_arg])
-       .status().ok().expect("leveldb build failed");
+        .status()
+        .ok()
+        .expect("leveldb build failed");
 
     println!("[leveldb] Build finished");
     // Step 2: Copy to output directories
@@ -113,7 +117,10 @@ fn build_leveldb(with_snappy: bool, is_bsd: bool) {
     let out_dir = Path::new(env_var);
 
     println!("[build] Copying output files");
-    let res = fs::copy(&leveldb_path.join("libleveldb.a"), &out_dir.join("libleveldb.a"));
+    let res = fs::copy(
+        &leveldb_path.join("libleveldb.a"),
+        &out_dir.join("libleveldb.a"),
+    );
     res.ok().expect("copy of output files failed");
 }
 
@@ -130,11 +137,10 @@ fn main() {
     }
 
     // Copy the build_detect_platform file into the appropriate place.
-    let template_path = Path::new("deps")
-                             .join("build_detect_platform");
+    let template_path = Path::new("deps").join("build_detect_platform");
     let detect_path = Path::new("deps")
-                           .join(format!("leveldb-{}", LEVELDB_VERSION))
-                           .join("build_detect_platform");
+        .join(format!("leveldb-{}", LEVELDB_VERSION))
+        .join("build_detect_platform");
     if have_snappy {
         println!("[build] Copying the `build_detect_platform` template");
         fs::copy(&template_path, &detect_path).unwrap();
@@ -148,24 +154,31 @@ fn main() {
             let file = File::open(&template_path).unwrap();
             let reader = BufReader::new(file);
 
-            reader.lines().map(|line| {
-                let line = line.unwrap();
-                if line.contains("-DSNAPPY") || line.contains("-lsnappy") {
-                    let mut tmp = String::new();
-                    tmp.push_str("true   #");
-                    tmp.push_str(line.as_ref());
-                    tmp.push_str("\n");
-                    tmp
-                } else {
-                    line
-                }
-            }).collect()
+            reader
+                .lines()
+                .map(|line| {
+                    let line = line.unwrap();
+                    if line.contains("-DSNAPPY") || line.contains("-lsnappy") {
+                        let mut tmp = String::new();
+                        tmp.push_str("true   #");
+                        tmp.push_str(line.as_ref());
+                        tmp.push_str("\n");
+                        tmp
+                    } else {
+                        line
+                    }
+                })
+                .collect()
         };
 
         let mut f = File::create(&detect_path).unwrap();
         for line in new_lines.iter() {
-            f.write_all(line.as_ref()).ok().expect("writing a line failed");
-            f.write_all("\n".as_bytes()).ok().expect("writing a line failed");
+            f.write_all(line.as_ref())
+                .ok()
+                .expect("writing a line failed");
+            f.write_all("\n".as_bytes())
+                .ok()
+                .expect("writing a line failed");
         }
 
         println!("[build] Patching complete");
@@ -173,10 +186,15 @@ fn main() {
 
     // Set executable bits on the file
 
-    let mut perms = fs::metadata(&detect_path).ok().expect("metadata missing").permissions();
+    let mut perms = fs::metadata(&detect_path)
+        .ok()
+        .expect("metadata missing")
+        .permissions();
     let current_mode = perms.mode();
     perms.set_mode(0o100 | current_mode);
-    fs::set_permissions(&detect_path, perms).ok().expect("permissions could not be set");
+    fs::set_permissions(&detect_path, perms)
+        .ok()
+        .expect("permissions could not be set");
 
     // Build LevelDB
     build_leveldb(have_snappy, is_bsd);
