@@ -38,10 +38,11 @@ fn build_leveldb(snappy_prefix: Option<PathBuf>) {
         .define("LEVELDB_BUILD_TESTS", "OFF")
         .define("LEVELDB_BUILD_BENCHMARKS", "OFF");
     if let Some(snappy_prefix) = snappy_prefix {
-        env::set_var(
-            "LDFLAGS",
-            format!("-L{}", snappy_prefix.join("lib").display()),
-        );
+        #[cfg(target_env = "msvc")]
+        let ldflags = format!("/LIBPATH:{}", snappy_prefix.join("lib").display());
+        #[cfg(not(target_env = "msvc"))]
+        let ldflags = format!("-L{}", snappy_prefix.join("lib").display());
+        env::set_var("LDFLAGS", ldflags);
         config
             .define("HAVE_SNAPPY", "ON")
             .cflag(format!("-I{}", snappy_prefix.join("include").display()))
