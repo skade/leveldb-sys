@@ -2,6 +2,11 @@
 
 Lowlevel bindings to the leveldb C library.
 
+## Dependencies
+
+* Your platforms C++ compiler (usually `gcc` or `clang` on Linux and Unix, Visual Studio Build environment on Windows)
+* `cmake`
+
 ## Usage
 
 If your project is using Cargo, drop the following lines in your Cargo.toml:
