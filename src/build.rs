@@ -6,10 +6,15 @@ use std::{
 #[cfg(feature = "snappy")]
 const SNAPPY_VERSION: &'static str = "1.1.7";
 const LEVELDB_VERSION: &'static str = "1.22";
+/// Directory name within `$OUT_DIR` where the static libraries should be built.
+const LIBDIR: &'static str = "lib";
 
 #[cfg(feature = "snappy")]
 fn build_snappy() -> PathBuf {
     println!("[snappy] Building");
+
+    let outdir = env::var("OUT_DIR").unwrap();
+    let libdir = Path::new(&outdir).join(LIBDIR);
 
     env::set_var("NUM_JOBS", num_cpus::get().to_string());
     let dest_prefix =
@@ -17,12 +22,15 @@ fn build_snappy() -> PathBuf {
             .define("BUILD_SHARED_LIBS", "OFF")
             .define("SNAPPY_BUILD_TESTS", "OFF")
             .define("HAVE_LIBZ", "OFF")
+            .define("CMAKE_INSTALL_LIBDIR", &libdir)
             .build();
 
-    println!(
-        "cargo:rustc-link-search=native={}",
-        dest_prefix.join("lib").display()
+    assert_eq!(
+        dest_prefix.join(LIBDIR),
+        libdir,
+        "CMake should build Snappy in provided LIBDIR"
     );
+    println!("cargo:rustc-link-search=native={}", libdir.display());
     println!("cargo:rustc-link-lib=static=snappy");
 
     dest_prefix
@@ -31,16 +39,20 @@ fn build_snappy() -> PathBuf {
 fn build_leveldb(snappy_prefix: Option<PathBuf>) {
     println!("[leveldb] Building");
 
+    let outdir = env::var("OUT_DIR").unwrap();
+    let libdir = Path::new(&outdir).join(LIBDIR);
+
     env::set_var("NUM_JOBS", num_cpus::get().to_string());
     let mut config =
         cmake::Config::new(Path::new("deps").join(format!("leveldb-{}", LEVELDB_VERSION)));
     config
         .define("LEVELDB_BUILD_TESTS", "OFF")
-        .define("LEVELDB_BUILD_BENCHMARKS", "OFF");
+        .define("LEVELDB_BUILD_BENCHMARKS", "OFF")
+        .define("CMAKE_INSTALL_LIBDIR", &libdir);
     if let Some(snappy_prefix) = snappy_prefix {
         env::set_var(
             "LDFLAGS",
-            format!("-L{}", snappy_prefix.join("lib").display()),
+            format!("-L{}", snappy_prefix.join(LIBDIR).display()),
         );
         config
             .define("HAVE_SNAPPY", "ON")
@@ -51,10 +63,12 @@ fn build_leveldb(snappy_prefix: Option<PathBuf>) {
     }
     let dest_prefix = config.build();
 
-    println!(
-        "cargo:rustc-link-search=native={}",
-        dest_prefix.join("lib").display()
+    assert_eq!(
+        dest_prefix.join(LIBDIR),
+        libdir,
+        "CMake should build LevelDB in provided LIBDIR"
     );
+    println!("cargo:rustc-link-search=native={}", libdir.display());
     println!("cargo:rustc-link-lib=static=leveldb");
 }
 
