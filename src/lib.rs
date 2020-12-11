@@ -5,23 +5,32 @@ extern crate libc;
 use libc::{c_char, c_int, c_uchar, c_void};
 use libc::size_t;
 
+macro_rules! opaque {
+    ($name:ident) => {
+        #[repr(C)]
+        pub struct $name {
+            _private: [u8; 0]
+        }
+    };
+}
+
 // These are opaque types that LevelDB uses.
-pub enum leveldb_t {}
-pub enum leveldb_cache_t {}
-pub enum leveldb_comparator_t {}
-pub enum leveldb_env_t {}
-pub enum leveldb_filelock_t {}
-pub enum leveldb_filterpolicy_t {}
-pub enum leveldb_iterator_t {}
-pub enum leveldb_logger_t {}
-pub enum leveldb_options_t {}
-pub enum leveldb_randomfile_t {}
-pub enum leveldb_readoptions_t {}
-pub enum leveldb_seqfile_t {}
-pub enum leveldb_snapshot_t {}
-pub enum leveldb_writablefile_t {}
-pub enum leveldb_writebatch_t {}
-pub enum leveldb_writeoptions_t {}
+opaque!(leveldb_t);
+opaque!(leveldb_cache_t);
+opaque!(leveldb_comparator_t);
+opaque!(leveldb_env_t);
+opaque!(leveldb_filelock_t);
+opaque!(leveldb_filterpolicy_t);
+opaque!(leveldb_iterator_t);
+opaque!(leveldb_logger_t);
+opaque!(leveldb_options_t);
+opaque!(leveldb_randomfile_t);
+opaque!(leveldb_readoptions_t);
+opaque!(leveldb_seqfile_t);
+opaque!(leveldb_snapshot_t);
+opaque!(leveldb_writablefile_t);
+opaque!(leveldb_writebatch_t);
+opaque!(leveldb_writeoptions_t);
 
 #[repr(C)]
 #[derive(Copy,Clone)]
