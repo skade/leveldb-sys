@@ -20,3 +20,4 @@ libc = "0.2.*"
 [build-dependencies]
 cmake = "0.1"
 num_cpus = "1.10"
+shell-escape = "0.1.5"
