@@ -12,10 +12,18 @@ macro_rules! opaque {
             _private: [u8; 0]
         }
     };
+
+    ($name:ident, $doc:expr) => {
+        #[doc=$doc]
+        #[repr(C)]
+        pub struct $name {
+            _private: [u8; 0]
+        }
+    };
 }
 
 // These are opaque types that LevelDB uses.
-opaque!(leveldb_t);
+opaque!(leveldb_t, "Opaque handle representing an opened database. The handle is thread-safe.");
 opaque!(leveldb_cache_t);
 opaque!(leveldb_comparator_t);
 opaque!(leveldb_env_t);
@@ -23,7 +31,7 @@ opaque!(leveldb_filelock_t);
 opaque!(leveldb_filterpolicy_t);
 opaque!(leveldb_iterator_t);
 opaque!(leveldb_logger_t);
-opaque!(leveldb_options_t);
+opaque!(leveldb_options_t, "Opaque handle representing database options");
 opaque!(leveldb_randomfile_t);
 opaque!(leveldb_readoptions_t);
 opaque!(leveldb_seqfile_t);
