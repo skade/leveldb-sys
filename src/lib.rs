@@ -90,6 +90,10 @@ extern "C" {
     pub fn leveldb_options_destroy(o: *mut leveldb_options_t);
     pub fn leveldb_options_set_comparator(o: *mut leveldb_options_t, c: *mut leveldb_comparator_t);
     pub fn leveldb_options_set_filter_policy(o: *mut leveldb_options_t, c: *mut leveldb_filterpolicy_t);
+    ///  Modify `o` to specify whether a new database should be created if none exists yet
+    ///
+    /// - If `val` is != 0, new database creation is enabled
+    /// - If `val` is 0,    no new database will be created if none exists yet
     pub fn leveldb_options_set_create_if_missing(o: *mut leveldb_options_t, val: c_uchar);
     pub fn leveldb_options_set_error_if_exists(o: *mut leveldb_options_t, val: c_uchar);
     pub fn leveldb_options_set_paranoid_checks(o: *mut leveldb_options_t, val: c_uchar);
