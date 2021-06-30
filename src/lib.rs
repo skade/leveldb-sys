@@ -96,6 +96,7 @@ extern "C" {
     // Options
     /// Create a new `leveldb_options_t` (not the database, but the database *configuration*!)
     pub fn leveldb_options_create() -> *mut leveldb_options_t;
+    /// Deallocate `o` (not the database!)
     pub fn leveldb_options_destroy(o: *mut leveldb_options_t);
     pub fn leveldb_options_set_comparator(o: *mut leveldb_options_t, c: *mut leveldb_comparator_t);
     pub fn leveldb_options_set_filter_policy(o: *mut leveldb_options_t, c: *mut leveldb_filterpolicy_t);
