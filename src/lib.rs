@@ -1,36 +1,40 @@
 #![allow(non_camel_case_types, non_upper_case_globals, non_snake_case)]
 
 extern crate libc;
-
+#[macro_use]
+extern crate ffi_opaque;
 use libc::{c_char, c_int, c_uchar, c_void};
 use libc::size_t;
 
-macro_rules! opaque {
-    ($name:ident) => {
-        #[repr(C)]
-        pub struct $name {
-            _private: [u8; 0]
-        }
-    };
-}
-
 // These are opaque types that LevelDB uses.
-opaque!(leveldb_t);
-opaque!(leveldb_cache_t);
-opaque!(leveldb_comparator_t);
-opaque!(leveldb_env_t);
-opaque!(leveldb_filelock_t);
-opaque!(leveldb_filterpolicy_t);
-opaque!(leveldb_iterator_t);
-opaque!(leveldb_logger_t);
-opaque!(leveldb_options_t);
-opaque!(leveldb_randomfile_t);
-opaque!(leveldb_readoptions_t);
-opaque!(leveldb_seqfile_t);
-opaque!(leveldb_snapshot_t);
-opaque!(leveldb_writablefile_t);
-opaque!(leveldb_writebatch_t);
-opaque!(leveldb_writeoptions_t);
+
+opaque!{
+    /// Opaque handle representing an opened database. The handle is thread-safe.
+    pub struct leveldb_t;
+    pub struct leveldb_cache_t;
+    pub struct leveldb_comparator_t;
+    pub struct leveldb_env_t;
+    pub struct leveldb_filelock_t;
+    pub struct leveldb_filterpolicy_t;
+    /// Opaque handle representing an ongoing iteration process through the database.
+    /// This handle is not thread safe.
+    pub struct leveldb_iterator_t;
+    pub struct leveldb_logger_t;
+    /// Opaque handle representing options used when opening a database. May be discarded after use,
+    /// using `leveldb_free`.
+    pub struct leveldb_options_t;
+    pub struct leveldb_randomfile_t;
+    /// Opaque handle representing options used during a read operation. May be discarded after use,
+    /// using `leveldb_free`.
+    pub struct leveldb_readoptions_t;
+    pub struct leveldb_seqfile_t;
+    pub struct leveldb_snapshot_t;
+    pub struct leveldb_writablefile_t;
+    pub struct leveldb_writebatch_t;
+    /// Opaque handle representing options used during a read operation. May be discarded after use,
+    /// using `leveldb_free`.
+    pub struct leveldb_writeoptions_t;
+}
 
 #[repr(C)]
 #[derive(Copy,Clone)]
@@ -41,7 +45,17 @@ pub enum Compression {
 
 extern "C" {
     // DB operations
+
+    /// Open the database at path `name` with the configurations set in `options`.
+    /// In case of success, the return value represents an open database.
+    ///
+    /// If this operation fails,
+    /// - `leveldb_t` is a nullpointer
+    /// - `errptr` contains more information about the error reason
     pub fn leveldb_open(options: *const leveldb_options_t, name: *const c_char, errptr: *mut *mut c_char) -> *mut leveldb_t;
+    /// Close the database represented by a `leveldb_t` handle
+    ///
+    /// Note that this operation cannot fail.
     pub fn leveldb_close(db: *mut leveldb_t);
     pub fn leveldb_put(db: *mut leveldb_t, options: *const leveldb_writeoptions_t, key: *const c_char, keylen: size_t, val: *const c_char, vallen: size_t, errptr: *mut *mut c_char);
     pub fn leveldb_delete(db: *mut leveldb_t, options: *const leveldb_writeoptions_t, key: *const c_char, keylen: size_t, errptr: *mut *mut c_char);
@@ -86,10 +100,16 @@ extern "C" {
     );
 
     // Options
+    /// Create a new `leveldb_options_t` (not the database, but the database *configuration*!)
     pub fn leveldb_options_create() -> *mut leveldb_options_t;
+    /// Deallocate a `leveldb_options_t` handle (not the database!)
     pub fn leveldb_options_destroy(o: *mut leveldb_options_t);
     pub fn leveldb_options_set_comparator(o: *mut leveldb_options_t, c: *mut leveldb_comparator_t);
     pub fn leveldb_options_set_filter_policy(o: *mut leveldb_options_t, c: *mut leveldb_filterpolicy_t);
+    /// Modify `o` to specify whether a new database should be created if none exists yet
+    ///
+    /// - If `val` is != 0, new database creation is enabled
+    /// - If `val` is 0,    no new database will be created if none exists yet (default)
     pub fn leveldb_options_set_create_if_missing(o: *mut leveldb_options_t, val: c_uchar);
     pub fn leveldb_options_set_error_if_exists(o: *mut leveldb_options_t, val: c_uchar);
     pub fn leveldb_options_set_paranoid_checks(o: *mut leveldb_options_t, val: c_uchar);
