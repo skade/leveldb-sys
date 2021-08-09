@@ -7,7 +7,6 @@ use libc::{c_char, c_int, c_uchar, c_void};
 use libc::size_t;
 
 // These are opaque types that LevelDB uses.
-
 opaque!{
     /// Opaque handle representing an opened database. The handle is thread-safe.
     pub struct leveldb_t;
