@@ -5,7 +5,7 @@ use std::{
 
 #[cfg(feature = "snappy")]
 const SNAPPY_VERSION: &'static str = "1.1.7";
-const LEVELDB_VERSION: &'static str = "1.22";
+const LEVELDB_VERSION: &'static str = "1.23";
 /// Directory name within `$OUT_DIR` where the static libraries should be built.
 const LIBDIR: &'static str = "lib";
 
@@ -54,11 +54,8 @@ fn build_leveldb(snappy_prefix: Option<PathBuf>) {
         let ldflags = format!("/LIBPATH:{}", snappy_prefix.join(LIBDIR).display());
         #[cfg(not(target_env = "msvc"))]
         let ldflags = format!("-L{}", snappy_prefix.join(LIBDIR).display());
-    
-        env::set_var(
-            "LDFLAGS",
-            ldflags
-        );
+
+        env::set_var("LDFLAGS", ldflags);
 
         config
             .define("HAVE_SNAPPY", "ON")
