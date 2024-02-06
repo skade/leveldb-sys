@@ -1,3 +1,6 @@
+extern crate shell_escape;
+
+use shell_escape::escape;
 use std::{
     env,
     path::{Path, PathBuf},
@@ -9,6 +12,11 @@ const LEVELDB_VERSION: &'static str = "1.22";
 /// Directory name within `$OUT_DIR` where the static libraries should be built.
 const LIBDIR: &'static str = "lib";
 
+/// Escape a path for use by the shell.
+fn escape_path(path: impl AsRef<Path>) -> String {
+    escape(format!("{}", path.as_ref().display()).into()).into()
+}
+
 #[cfg(feature = "snappy")]
 fn build_snappy() -> PathBuf {
     println!("[snappy] Building");
@@ -16,13 +24,18 @@ fn build_snappy() -> PathBuf {
     let outdir = env::var("OUT_DIR").unwrap();
     let libdir = Path::new(&outdir).join(LIBDIR);
 
+    // Paths containing double quotes seem to break the CMake build.
+    if outdir.contains('"') {
+        panic!("can't build at path containing double quotes");
+    }
+
     env::set_var("NUM_JOBS", num_cpus::get().to_string());
     let dest_prefix =
         cmake::Config::new(Path::new("deps").join(format!("snappy-{}", SNAPPY_VERSION)))
             .define("BUILD_SHARED_LIBS", "OFF")
             .define("SNAPPY_BUILD_TESTS", "OFF")
             .define("HAVE_LIBZ", "OFF")
-            .define("CMAKE_INSTALL_LIBDIR", &libdir)
+            .define("CMAKE_INSTALL_LIBDIR", escape_path(&libdir))
             .build();
 
     assert_eq!(
@@ -42,6 +55,11 @@ fn build_leveldb(snappy_prefix: Option<PathBuf>) {
     let outdir = env::var("OUT_DIR").unwrap();
     let libdir = Path::new(&outdir).join(LIBDIR);
 
+    // Paths containing double quotes seem to break the CMake build.
+    if outdir.contains('"') {
+        panic!("can't build at path containing double quotes");
+    }
+
     env::set_var("NUM_JOBS", num_cpus::get().to_string());
     let mut config =
         cmake::Config::new(Path::new("deps").join(format!("leveldb-{}", LEVELDB_VERSION)));
@@ -51,19 +69,16 @@ fn build_leveldb(snappy_prefix: Option<PathBuf>) {
         .define("CMAKE_INSTALL_LIBDIR", &libdir);
     if let Some(snappy_prefix) = snappy_prefix {
         #[cfg(target_env = "msvc")]
-        let ldflags = format!("/LIBPATH:{}", snappy_prefix.join(LIBDIR).display());
+        let ldflags = format!("/LIBPATH:{}", escape_path(snappy_prefix.join(LIBDIR)));
         #[cfg(not(target_env = "msvc"))]
-        let ldflags = format!("-L{}", snappy_prefix.join(LIBDIR).display());
-    
-        env::set_var(
-            "LDFLAGS",
-            ldflags
-        );
+        let ldflags = format!("-L{}", escape_path(snappy_prefix.join(LIBDIR)));
+
+        env::set_var("LDFLAGS", ldflags);
 
         config
             .define("HAVE_SNAPPY", "ON")
-            .cflag(format!("-I{}", snappy_prefix.join("include").display()))
-            .cxxflag(format!("-I{}", snappy_prefix.join("include").display()));
+            .cflag(format!("-I{}", escape_path(snappy_prefix.join("include"))))
+            .cxxflag(format!("-I{}", escape_path(snappy_prefix.join("include"))));
     } else {
         config.define("HAVE_SNAPPY", "OFF");
     }
