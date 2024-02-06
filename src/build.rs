@@ -24,13 +24,18 @@ fn build_snappy() -> PathBuf {
     let outdir = env::var("OUT_DIR").unwrap();
     let libdir = Path::new(&outdir).join(LIBDIR);
 
+    // Paths containing double quotes seem to break the CMake build.
+    if outdir.contains('"') {
+        panic!("can't build at path containing double quotes");
+    }
+
     env::set_var("NUM_JOBS", num_cpus::get().to_string());
     let dest_prefix =
         cmake::Config::new(Path::new("deps").join(format!("snappy-{}", SNAPPY_VERSION)))
             .define("BUILD_SHARED_LIBS", "OFF")
             .define("SNAPPY_BUILD_TESTS", "OFF")
             .define("HAVE_LIBZ", "OFF")
-            .define("CMAKE_INSTALL_LIBDIR", &libdir)
+            .define("CMAKE_INSTALL_LIBDIR", escape_path(&libdir))
             .build();
 
     assert_eq!(
@@ -49,6 +54,11 @@ fn build_leveldb(snappy_prefix: Option<PathBuf>) {
 
     let outdir = env::var("OUT_DIR").unwrap();
     let libdir = Path::new(&outdir).join(LIBDIR);
+
+    // Paths containing double quotes seem to break the CMake build.
+    if outdir.contains('"') {
+        panic!("can't build at path containing double quotes");
+    }
 
     env::set_var("NUM_JOBS", num_cpus::get().to_string());
     let mut config =
