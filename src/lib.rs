@@ -94,8 +94,8 @@ extern "C" {
     pub fn leveldb_writebatch_iterate(
         b: *mut leveldb_writebatch_t,
         state: *mut c_void,
-        put: extern fn(*mut c_void, *const c_char, size_t, *const c_char, size_t),
-        deleted: extern fn(*mut c_void, *const c_char, size_t)
+        put: extern "C" fn(*mut c_void, *const c_char, size_t, *const c_char, size_t),
+        deleted: extern "C" fn(*mut c_void, *const c_char, size_t)
     );
 
     // Options
@@ -124,9 +124,9 @@ extern "C" {
     // Comparator
     pub fn leveldb_comparator_create(
         state: *mut c_void,
-        destructor: extern fn(*mut c_void),
-        compare: extern fn(*mut c_void, *const c_char, size_t, *const c_char, size_t) -> c_int,
-        name: extern fn(*mut c_void) -> *const c_char
+        destructor: extern "C" fn(*mut c_void),
+        compare: extern "C" fn(*mut c_void, *const c_char, size_t, *const c_char, size_t) -> c_int,
+        name: extern "C" fn(*mut c_void) -> *const c_char
     ) -> *mut leveldb_comparator_t;
     pub fn leveldb_comparator_destroy(c: *mut leveldb_comparator_t);
 
