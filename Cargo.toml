@@ -2,6 +2,7 @@
 name = "leveldb-sys"
 version = "2.0.9"
 authors = ["Andrew Dunham <andrew@du.nham.ca>", "Florian Gilcher <florian.gilcher@asquera.de>"]
+edition = "2021"
 
 description = "FFI bindings to LevelDB"
 repository = "https://github.com/skade/leveldb-sys"

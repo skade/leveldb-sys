@@ -4,26 +4,46 @@ use std::{
 };
 
 #[cfg(feature = "snappy")]
-const SNAPPY_VERSION: &'static str = "1.1.7";
-const LEVELDB_VERSION: &'static str = "1.22";
+const SNAPPY_VERSION: &str = "1.2.2";
+
+const LEVELDB_VERSION: &str = "1.22";
 /// Directory name within `$OUT_DIR` where the static libraries should be built.
-const LIBDIR: &'static str = "lib";
+const LIBDIR: &str = "lib";
 
 #[cfg(feature = "snappy")]
 fn build_snappy() -> PathBuf {
+    use std::process::Command;
+    let outdir = env::var("OUT_DIR").unwrap();
+
+    println!("[snappy] Checkout");
+    let snappy_dir = Path::new(&outdir).join(format!("snappy-{SNAPPY_VERSION}"));
+    if !snappy_dir.join("CMakeLists.txt").exists() {
+        let output = Command::new("git")
+            .arg("clone")
+            .arg("--branch")
+            .arg(SNAPPY_VERSION)
+            .arg("https://github.com/google/snappy.git")
+            .arg(snappy_dir.clone())
+            .arg("--recurse-submodules")
+            .output()
+            .expect("failed to execute git");
+        if !output.status.success() {
+            panic!("failed to checkout snappy: {}", String::from_utf8_lossy(&output.stderr));
+        }
+    }
+
     println!("[snappy] Building");
 
-    let outdir = env::var("OUT_DIR").unwrap();
     let libdir = Path::new(&outdir).join(LIBDIR);
 
     env::set_var("NUM_JOBS", num_cpus::get().to_string());
-    let dest_prefix =
-        cmake::Config::new(Path::new("deps").join(format!("snappy-{}", SNAPPY_VERSION)))
-            .define("BUILD_SHARED_LIBS", "OFF")
-            .define("SNAPPY_BUILD_TESTS", "OFF")
-            .define("HAVE_LIBZ", "OFF")
-            .define("CMAKE_INSTALL_LIBDIR", &libdir)
-            .build();
+    let dest_prefix = cmake::Config::new(snappy_dir)
+        .define("BUILD_SHARED_LIBS", "OFF")
+        .define("SNAPPY_BUILD_TESTS", "OFF")
+        .define("SNAPPY_BUILD_BENCHMARKS", "OFF")
+        .define("HAVE_LIBZ", "OFF")
+        .define("CMAKE_INSTALL_LIBDIR", &libdir)
+        .build();
 
     assert_eq!(
         dest_prefix.join(LIBDIR),
@@ -44,7 +64,7 @@ fn build_leveldb(snappy_prefix: Option<PathBuf>) {
 
     env::set_var("NUM_JOBS", num_cpus::get().to_string());
     let mut config =
-        cmake::Config::new(Path::new("deps").join(format!("leveldb-{}", LEVELDB_VERSION)));
+        cmake::Config::new(Path::new("deps").join(format!("leveldb-{LEVELDB_VERSION}")));
     config
         .define("LEVELDB_BUILD_TESTS", "OFF")
         .define("LEVELDB_BUILD_BENCHMARKS", "OFF")
@@ -54,11 +74,8 @@ fn build_leveldb(snappy_prefix: Option<PathBuf>) {
         let ldflags = format!("/LIBPATH:{}", snappy_prefix.join(LIBDIR).display());
         #[cfg(not(target_env = "msvc"))]
         let ldflags = format!("-L{}", snappy_prefix.join(LIBDIR).display());
-    
-        env::set_var(
-            "LDFLAGS",
-            ldflags
-        );
+
+        env::set_var("LDFLAGS", ldflags);
 
         config
             .define("HAVE_SNAPPY", "ON")
