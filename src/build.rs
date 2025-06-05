@@ -17,7 +17,7 @@ fn build_snappy() -> PathBuf {
 
     println!("[snappy] Checkout");
     let snappy_dir = Path::new(&outdir).join(format!("snappy-{SNAPPY_VERSION}"));
-    if !snappy_dir.exists() {
+    if !snappy_dir.join("CMakeLists.txt").exists() {
         let output = Command::new("git")
             .arg("clone")
             .arg("--branch")
