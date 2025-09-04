@@ -3,11 +3,11 @@
 extern crate libc;
 #[macro_use]
 extern crate ffi_opaque;
-use libc::{c_char, c_int, c_uchar, c_void};
 use libc::size_t;
+use libc::{c_char, c_int, c_uchar, c_void};
 
 // These are opaque types that LevelDB uses.
-opaque!{
+opaque! {
     /// Opaque handle representing an opened database. The handle is thread-safe.
     pub struct leveldb_t;
     pub struct leveldb_cache_t;
@@ -36,13 +36,27 @@ opaque!{
 }
 
 #[repr(C)]
-#[derive(Copy,Clone)]
+#[derive(Copy, Clone)]
 pub enum Compression {
-  No = 0,
-  Snappy = 1
+    No = 0,
+    Snappy = 1,
 }
 
+/// Reference to a function defined in snappy.
+///
+/// Without some reference to snappy from rust code, rustc ignores the `rustc-link-lib` directive
+/// and refuses to include the `-lsnappy` argument to the linker. This global forces rustc to link
+/// against it.
+#[cfg(feature = "snappy")]
+#[used]
+static _FORCE_LINK_SNAPPY: &unsafe extern "C" fn(size_t) -> size_t =
+    &(snappy_max_compressed_length as unsafe extern "C" fn(size_t) -> size_t);
+
 extern "C" {
+    // Expose a snappy function to get cargo to correctly link against the static library.
+    #[cfg(feature = "snappy")]
+    fn snappy_max_compressed_length(source_length: size_t) -> size_t;
+
     // DB operations
 
     /// Open the database at path `name` with the configurations set in `options`.
@@ -51,27 +65,82 @@ extern "C" {
     /// If this operation fails,
     /// - `leveldb_t` is a nullpointer
     /// - `errptr` contains more information about the error reason
-    pub fn leveldb_open(options: *const leveldb_options_t, name: *const c_char, errptr: *mut *mut c_char) -> *mut leveldb_t;
+    pub fn leveldb_open(
+        options: *const leveldb_options_t,
+        name: *const c_char,
+        errptr: *mut *mut c_char,
+    ) -> *mut leveldb_t;
     /// Close the database represented by a `leveldb_t` handle
     ///
     /// Note that this operation cannot fail.
     pub fn leveldb_close(db: *mut leveldb_t);
-    pub fn leveldb_put(db: *mut leveldb_t, options: *const leveldb_writeoptions_t, key: *const c_char, keylen: size_t, val: *const c_char, vallen: size_t, errptr: *mut *mut c_char);
-    pub fn leveldb_delete(db: *mut leveldb_t, options: *const leveldb_writeoptions_t, key: *const c_char, keylen: size_t, errptr: *mut *mut c_char);
-    pub fn leveldb_write(db: *mut leveldb_t, options: *const leveldb_writeoptions_t, batch: *mut leveldb_writebatch_t, errptr: *mut *mut c_char);
-    pub fn leveldb_get(db: *mut leveldb_t, options: *const leveldb_readoptions_t, key: *const c_char, keylen: size_t, vallen: *mut size_t, errptr: *mut *mut c_char) -> *mut c_char;
-    pub fn leveldb_create_iterator(db: *mut leveldb_t, options: *const leveldb_readoptions_t) -> *mut leveldb_iterator_t;
+    pub fn leveldb_put(
+        db: *mut leveldb_t,
+        options: *const leveldb_writeoptions_t,
+        key: *const c_char,
+        keylen: size_t,
+        val: *const c_char,
+        vallen: size_t,
+        errptr: *mut *mut c_char,
+    );
+    pub fn leveldb_delete(
+        db: *mut leveldb_t,
+        options: *const leveldb_writeoptions_t,
+        key: *const c_char,
+        keylen: size_t,
+        errptr: *mut *mut c_char,
+    );
+    pub fn leveldb_write(
+        db: *mut leveldb_t,
+        options: *const leveldb_writeoptions_t,
+        batch: *mut leveldb_writebatch_t,
+        errptr: *mut *mut c_char,
+    );
+    pub fn leveldb_get(
+        db: *mut leveldb_t,
+        options: *const leveldb_readoptions_t,
+        key: *const c_char,
+        keylen: size_t,
+        vallen: *mut size_t,
+        errptr: *mut *mut c_char,
+    ) -> *mut c_char;
+    pub fn leveldb_create_iterator(
+        db: *mut leveldb_t,
+        options: *const leveldb_readoptions_t,
+    ) -> *mut leveldb_iterator_t;
     pub fn leveldb_create_snapshot(db: *mut leveldb_t) -> *mut leveldb_snapshot_t;
     pub fn leveldb_release_snapshot(db: *mut leveldb_t, snapshot: *const leveldb_snapshot_t);
     pub fn leveldb_property_value(db: *mut leveldb_t, propname: *const c_char) -> *mut c_char;
 
     // TODO: const'ness of pointers here is in question
-    pub fn leveldb_approximate_sizes(db: *mut leveldb_t, num_ranges: c_int, range_start_key: *const *const c_char, range_start_key_len: *const size_t, range_limit_key: *const *const c_char, range_limit_key_len: *const size_t, sizes: *mut u64);
-    pub fn leveldb_compact_range(db: *mut leveldb_t, start_key: *const c_char, start_key_len: size_t, limit_key: *const c_char, limit_key_len: size_t);
+    pub fn leveldb_approximate_sizes(
+        db: *mut leveldb_t,
+        num_ranges: c_int,
+        range_start_key: *const *const c_char,
+        range_start_key_len: *const size_t,
+        range_limit_key: *const *const c_char,
+        range_limit_key_len: *const size_t,
+        sizes: *mut u64,
+    );
+    pub fn leveldb_compact_range(
+        db: *mut leveldb_t,
+        start_key: *const c_char,
+        start_key_len: size_t,
+        limit_key: *const c_char,
+        limit_key_len: size_t,
+    );
 
     // Management operations
-    pub fn leveldb_destroy_db(options: *const leveldb_options_t, name: *const c_char, errptr: *mut *mut c_char);
-    pub fn leveldb_repair_db(options: *const leveldb_options_t, name: *const c_char, errptr: *mut *mut c_char);
+    pub fn leveldb_destroy_db(
+        options: *const leveldb_options_t,
+        name: *const c_char,
+        errptr: *mut *mut c_char,
+    );
+    pub fn leveldb_repair_db(
+        options: *const leveldb_options_t,
+        name: *const c_char,
+        errptr: *mut *mut c_char,
+    );
 
     // Iterator
     pub fn leveldb_iter_destroy(it: *mut leveldb_iterator_t);
@@ -89,13 +158,23 @@ extern "C" {
     pub fn leveldb_writebatch_create() -> *mut leveldb_writebatch_t;
     pub fn leveldb_writebatch_destroy(b: *mut leveldb_writebatch_t);
     pub fn leveldb_writebatch_clear(b: *mut leveldb_writebatch_t);
-    pub fn leveldb_writebatch_put(b: *mut leveldb_writebatch_t, key: *const c_char, keylen: size_t, val: *const c_char, vallen: size_t);
-    pub fn leveldb_writebatch_delete(b: *mut leveldb_writebatch_t, key: *const c_char, keylen: size_t);
+    pub fn leveldb_writebatch_put(
+        b: *mut leveldb_writebatch_t,
+        key: *const c_char,
+        keylen: size_t,
+        val: *const c_char,
+        vallen: size_t,
+    );
+    pub fn leveldb_writebatch_delete(
+        b: *mut leveldb_writebatch_t,
+        key: *const c_char,
+        keylen: size_t,
+    );
     pub fn leveldb_writebatch_iterate(
         b: *mut leveldb_writebatch_t,
         state: *mut c_void,
-        put: extern fn(*mut c_void, *const c_char, size_t, *const c_char, size_t),
-        deleted: extern fn(*mut c_void, *const c_char, size_t)
+        put: extern "C" fn(*mut c_void, *const c_char, size_t, *const c_char, size_t),
+        deleted: extern "C" fn(*mut c_void, *const c_char, size_t),
     );
 
     // Options
@@ -104,7 +183,10 @@ extern "C" {
     /// Deallocate a `leveldb_options_t` handle (not the database!)
     pub fn leveldb_options_destroy(o: *mut leveldb_options_t);
     pub fn leveldb_options_set_comparator(o: *mut leveldb_options_t, c: *mut leveldb_comparator_t);
-    pub fn leveldb_options_set_filter_policy(o: *mut leveldb_options_t, c: *mut leveldb_filterpolicy_t);
+    pub fn leveldb_options_set_filter_policy(
+        o: *mut leveldb_options_t,
+        c: *mut leveldb_filterpolicy_t,
+    );
     /// Modify `o` to specify whether a new database should be created if none exists yet
     ///
     /// - If `val` is != 0, new database creation is enabled
@@ -124,9 +206,9 @@ extern "C" {
     // Comparator
     pub fn leveldb_comparator_create(
         state: *mut c_void,
-        destructor: extern fn(*mut c_void),
-        compare: extern fn(*mut c_void, *const c_char, size_t, *const c_char, size_t) -> c_int,
-        name: extern fn(*mut c_void) -> *const c_char
+        destructor: extern "C" fn(*mut c_void),
+        compare: extern "C" fn(*mut c_void, *const c_char, size_t, *const c_char, size_t) -> c_int,
+        name: extern "C" fn(*mut c_void) -> *const c_char,
     ) -> *mut leveldb_comparator_t;
     pub fn leveldb_comparator_destroy(c: *mut leveldb_comparator_t);
 
@@ -155,7 +237,10 @@ extern "C" {
     pub fn leveldb_readoptions_destroy(o: *mut leveldb_readoptions_t);
     pub fn leveldb_readoptions_set_verify_checksums(o: *mut leveldb_readoptions_t, val: c_uchar);
     pub fn leveldb_readoptions_set_fill_cache(o: *mut leveldb_readoptions_t, val: c_uchar);
-    pub fn leveldb_readoptions_set_snapshot(o: *mut leveldb_readoptions_t, snapshot: *const leveldb_snapshot_t);
+    pub fn leveldb_readoptions_set_snapshot(
+        o: *mut leveldb_readoptions_t,
+        snapshot: *const leveldb_snapshot_t,
+    );
 
     // Write options
     pub fn leveldb_writeoptions_create() -> *mut leveldb_writeoptions_t;

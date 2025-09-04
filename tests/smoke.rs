@@ -3,17 +3,13 @@ extern crate tempfile;
 
 #[test]
 fn major_version() {
-    let version = unsafe {
-        sys::leveldb_major_version()
-    };
+    let version = unsafe { sys::leveldb_major_version() };
     assert_eq!(version, 1);
 }
 
 #[test]
 fn minor_version() {
-    let version = unsafe {
-        sys::leveldb_minor_version()
-    };
+    let version = unsafe { sys::leveldb_minor_version() };
     assert!(version >= 23);
 }
 
