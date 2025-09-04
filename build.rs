@@ -78,26 +78,44 @@ mod build {
     }
 }
 
-#[cfg(feature = "snappy")]
-fn link_snappy() {
+fn vendor() -> bool {
     #[cfg(feature = "vendor")]
-    println!("cargo:rustc-link-lib=static=snappy");
+    {
+        const ENV: &str = "LEVELDB_NO_VENDOR";
+        println!("cargo::rerun-if-env-changed={ENV}");
+        std::env::var(ENV).unwrap_or_default() != "1"
+    }
 
     #[cfg(not(feature = "vendor"))]
-    println!("cargo:rustc-link-lib=snappy");
+    {
+        false
+    }
+}
+
+#[cfg(feature = "snappy")]
+fn link_snappy() {
+    if vendor() {
+        println!("cargo:rustc-link-lib=static=snappy");
+    } else {
+        println!("cargo:rustc-link-lib=snappy");
+    }
 }
 
 fn link_leveldb() {
-    #[cfg(feature = "vendor")]
-    println!("cargo:rustc-link-lib=static=leveldb");
-
-    #[cfg(not(feature = "vendor"))]
-    println!("cargo:rustc-link-lib=leveldb");
+    if vendor() {
+        println!("cargo:rustc-link-lib=static=leveldb");
+    } else {
+        println!("cargo:rustc-link-lib=leveldb");
+    }
 }
 
 fn main() {
     #[cfg(all(feature = "snappy", feature = "vendor"))]
-    let snappy_prefix = Some(build::build_snappy());
+    let snappy_prefix = if vendor() {
+        Some(build::build_snappy())
+    } else {
+        None
+    };
 
     #[cfg(all(not(feature = "snappy"), feature = "vendor"))]
     let snappy_prefix: Option<std::path::PathBuf> = None;
@@ -106,7 +124,9 @@ fn main() {
     link_snappy();
 
     #[cfg(feature = "vendor")]
-    build::build_leveldb(snappy_prefix.as_deref());
+    if vendor() {
+        build::build_leveldb(snappy_prefix.as_deref());
+    }
 
     link_leveldb();
 
