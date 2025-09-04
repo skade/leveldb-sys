@@ -21,6 +21,10 @@ leveldb-sys = "*"
 
 `levelbd-sys` offers a `snappy` feature to build the snappy library.
 
+The `vendor` feature (enabled by default) uses a bundled version of leveldb
+and snappy. Disabling this feature (or setting the environment variable
+`LEVELDB_NO_VENDOR=1`) will use the system-wide libraries.
+
 ## LICENSE
 
 MIT
