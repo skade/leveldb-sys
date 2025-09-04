@@ -5,7 +5,7 @@ mod build {
     use std::env;
     use std::path::Path;
 
-    const LIBDIR: &'static str = "lib";
+    const LIBDIR: &str = "lib";
 
     #[cfg(feature = "snappy")]
     pub fn build_snappy() -> std::path::PathBuf {

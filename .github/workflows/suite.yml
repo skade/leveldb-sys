@@ -1,46 +1,46 @@
-on: [push, pull_request]
-
 name: Continuous integration
 
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - master
+
 jobs:
-  test-x86_64-unknown-linux-gnu:
-    name: Test Suite (x86_64-unknown-linux-gnu)
+  test:
+    name: Test Suite
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        default-features:
+          - ""
+        features:
+          - ""
+          - "snappy"
+        include:
+          - os: ubuntu-latest
+            default-features: "--no-default-features"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - if: ${{ matrix.os == 'ubuntu-latest' && matrix.default-features == '--no-default-features' }}
+        name: Install LevelDB (Ubuntu)
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install --yes --force-yes libleveldb-dev
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@1.81
+      - run: cargo test --all --locked ${{ matrix.default-features }} --features "${{ matrix.features }}"
+
+  fmt:
+    name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-
-  test-x86_64-unknown-windows-msvc:
-    name: Test Suite (x86_64-unknown-windows-msvc)
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-
-  test-x86_64-unknown-darwin:
-    name: Test Suite (x86_64-unknown-darwin)
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
+          submodules: true
+      - uses: dtolnay/rust-toolchain@1.81
+      - run: rustup component add rustfmt clippy
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --all-features -- --deny warnings

@@ -2,6 +2,7 @@
 name = "leveldb-sys"
 version = "2.0.9"
 authors = ["Andrew Dunham <andrew@du.nham.ca>", "Florian Gilcher <florian.gilcher@asquera.de>"]
+rust-version = "1.81"
 
 description = "FFI bindings to LevelDB"
 repository = "https://github.com/skade/leveldb-sys"
